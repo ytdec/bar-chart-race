@@ -3,6 +3,7 @@
 <head>
    <meta charset="utf-8">
    <script src="https://d3js.org/d3.v5.min.js"></script>
+   <script src="data-wiki.js"></script>
    <style>
    text{
       font-size: 16px;
@@ -54,6 +55,8 @@
 </head>
 
 <body>
+
+    <!--
    <script>
       // Feel free to change or delete any of the code you see in this editor!
       var svg = d3.select("body").append("svg")
@@ -302,7 +305,7 @@ d3.csv('brand_values.csv').then(function(data) {
 
       yearText.html(~~year);
 
-      if(year == 2001) ticker.stop();
+      if(year == 2018) ticker.stop();
       year = d3.format('.1f')((+year) + 0.1);
    },tickDuration);
 

@@ -9,7 +9,7 @@ function loadData(){
 
         //additional params
         params.format = "json";
-        params.maxage = 60*60*24;
+        params.maxage = 60*60*24; //cache 24h
         params.action = "parse";
 
         let url = wikiApi + "?origin=*";
@@ -33,18 +33,26 @@ function loadData(){
      * } 
      */
     function parseText( txt ){
-        const content  = d3.select("body").append("div").style("display", "none").html( txt );
-        const tables   = content.selectAll("table");
-        const data = {};
-        tables.each( function(){
-            //get country information
-            const h3 = d3.select(this.parentNode).select("h3");
-            if( h3 == undefined )
-                return;
+        const content  = d3.select("body").append("div")
+                            .style("display", "none")
+                            .html( txt );
+        
+        const countries = {};
+        //get country information
+        content.selectAll("h3").each(function(d,i){
+            const h3 = d3.select(this);
             const country = h3.select("a").text();
             const imgSrc  = h3.select("img").attr("_src");
+            countries[i] = {_txt: country, _img: imgSrc };
+        });
+            
 
-            console.log( country, imgSrc );
+        const data = {};
+        content.selectAll("table").each( function(d,k){
+            const country = countries[k]._txt;
+            const imgSrc  = countries[k]._img;
+
+            //console.log( country, imgSrc );
 
             const obj = { _img: imgSrc }
             //get table
@@ -89,19 +97,19 @@ function loadData(){
                             default:
                                 const year   = header[j];
                                 const scores = parseInt( txt );
-                                if( scores > 0 )
+                                if( scores >= 0 )
                                     obj[player][year] = scores;
                         }
                     }
                 }
             });
 
-            console.log( obj );
+            //console.log( obj );
 
             data[ country ] = obj;
         });
 
-        content.remove();
+        //content.remove();
         return data;
     }
 
@@ -110,14 +118,14 @@ function loadData(){
      * return an object: {
      *   year : {
      *     "_host" : country
-     *     "_logo" :
+     *     "_logo" : img url
      *   }   
      * }
      */
     function parseHosts( txt ){
 
         const content  = d3.select("body").append("div")
-                            //.style("display", "none")
+                            .style("display", "none")
                             .html( txt );
         const table = content.select("table");
 
@@ -149,8 +157,8 @@ function loadData(){
         const allPromises = [];
 
         table.selectAll("tr").each(function(d, i){
-            if( allPromises.length >=3 )
-                return;
+            //if( allPromises.length >=3 )
+            //    return;
             //ignore header
             if( i == 0 ) return;
             const tds = this.children;
@@ -172,7 +180,10 @@ function loadData(){
             allPromises.push( _loadLogo({_pageId: pageId, _year: year, _host: host} ));
             //console.log( year, host, detailPage );
         });
+        
+        content.remove();
 
+        //waiting for allPromises terminating
         const ret = Promise.all( allPromises )
             .then( arr => {
                 const data  = {};
@@ -180,11 +191,9 @@ function loadData(){
                     if( e ) 
                         data[e._year] = e 
                 });
-                console.data;
                 return data;
             });
 
-        content.remove();
         return ret;
     }
 
@@ -203,7 +212,7 @@ function loadData(){
     //parse data of scores by country by year
     return loadWiki( {
             //page   : "List_of_FIFA_World_Cup_goalscorers",
-            section: 3,
+            section: 2,
             //Parse the content of this revision. Overrides page and pageid.
             oldid  : 925902747, //Latest revision as of 01:15, 13 November 2019
         })
@@ -212,6 +221,3 @@ function loadData(){
         .then( loadHosts )
         .then( function(){ return data } );
 }
-
-
-loadData().then( console.log );
